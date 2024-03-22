@@ -838,3 +838,7 @@ node_modules/undici-types/readable.d.ts
 node_modules/undici-types/README.md
 node_modules/undici-types/webidl.d.ts
 node_modules/undici-types/websocket.d.ts
+node_modules/@types/cheerio/index.d.ts
+node_modules/@types/cheerio/LICENSE
+node_modules/@types/cheerio/package.json
+node_modules/@types/cheerio/README.md

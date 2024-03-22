@@ -13,7 +13,8 @@
     "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
-    "@types/node": "^20.11.29",
+    "@types/cheerio": "^0.22.35",
+    "@types/node": "^20.11.30",
     "tslib": "^2.6.2"
   }
 }
