@@ -70,6 +70,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                 if (postTime < referenceTime) {
                     stopCrawling = true;
                     console.log(postTime, referenceTime);
+                    
                     break;
                 }
 
