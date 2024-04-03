@@ -7,6 +7,7 @@ export interface CommunityPost {
     content: string;
     commentCount: string;
     timestamp: string;
+    data: string;
 }
 
 export interface CrawlOptions {

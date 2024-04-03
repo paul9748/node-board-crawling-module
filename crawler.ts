@@ -1,6 +1,6 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
-import { CommunityPost, CrawlOptions } from './types';
+import { CommunityPost, CrawlOptions } from './types.ts';
 
 export async function crawlCommunityPosts(options: CrawlOptions): Promise<CommunityPost[]> {
     try {
@@ -21,8 +21,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                 break;
             }
 
-            const $ = cheerio.load(response.data);
-
+            const $ = await cheerio.load(response.data);
             let stopCrawling = false;
 
             for (const element of $(selectors.postLink)) {
@@ -31,6 +30,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     console.warn('Post link not found, skipping post');
                     continue;
                 }
+
 
                 const postPageUrl = new URL(postLink, postListUrl).href;
                 const postResponse = await axios.get(postPageUrl).catch((error) => {
@@ -65,12 +65,11 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
 
                 const postTimestampElement = findNestedElement(post$, selectors.timestamp);
                 const postTimestampString = postTimestampElement ? postTimestampElement.text().trim() : "";
-
                 const postTime = parseDateString(postTimestampString);
-                if (postTime < referenceTime) {
+                if (postTime < referenceTime || postTimestampString == "") {
                     stopCrawling = true;
                     console.log(postTime, referenceTime);
-                    
+
                     break;
                 }
 
@@ -82,7 +81,8 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     upvotes: postUpvotes,
                     content: postContent,
                     commentCount: postCommentCount,
-                    timestamp: postTimestampString
+                    timestamp: postTimestampString,
+                    data: '',
                 });
             }
 

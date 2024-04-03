@@ -1,8 +1,14 @@
-import { CommunityPost } from './types';
+import { CommunityPost } from './types.ts';
+import parser from 'node-html-parser'
 
 export function processForRuliweb(posts: CommunityPost[]): CommunityPost[] {
     return posts.map(post => {
+        post = {
+            ...post,
+            data: post.title + " " + parser.parse(post.content).textContent.replace(/[\n\t]/g, "")
+        }
         const regex = /조회\s+(\d+)/;
+
         const match = post.views.match(regex);
 
         if (match) {

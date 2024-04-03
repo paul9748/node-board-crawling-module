@@ -1,35 +1,39 @@
-const { KMR, KKMA } = require('koalanlp/API');
-const { initialize } = require('koalanlp/Util');
-const { Tagger, Parser } = require('koalanlp/proc');
+import { EUNJEON } from 'koalanlp/API.js';
+import { initialize } from 'koalanlp/Util.js';
+import { Tagger } from 'koalanlp/proc.js';
+
+let initialized = false; // 초기화 추적을 위한 플래그
+
+// KoalaNLP가 아직 초기화되지 않았다면 초기화하는 함수
+const initializeKoalaNLP = async () => {
+    if (!initialized) {
+        await initialize({ packages: { EUNJEON: '2.0.4' } });
+        //verbose: true
+        initialized = true;
+    }
+};
 
 // 문자열을 형태소로 분석하는 함수
-async function analyzeMorphemes(text) {
-    await initialize({ packages: { KMR: '2.0.4', KKMA: '2.0.4' }, verbose: true });
+const analyzeMorphemes = async (texts) => {
+    await initializeKoalaNLP(); // KoalaNLP가 초기화되었는지 확인
+    let datas = [];
+    const tagger = new Tagger(EUNJEON);
 
-    let tagger = new Tagger(KKMA);
-    let tagged = await tagger(text);
-    // for (const sent of tagged) {
-    //     console.log(sent.toString());
-    // }
-
-    // let parser = new Parser(KKMA);
-    // let parsed = await parser(text);
-    // for (const sent of parsed) {
-    //     console.log(sent.toString());
-    //     for (const dep of sent.dependencies) {
-    //         console.log(dep.toString());
-    //     }
-    // }
-    const data = [];
-    for (const sent of tagged) {
-        for (const word of sent) {
-            for (const morphemes of word) {
-                data.push(morphemes.getSurface().toString());
+    for (const text of texts) {
+        const tagged = await tagger(text);
+        let data = "";
+        for (const sent of tagged) {
+            for (const word of sent) {
+                for (const morphemes of word) {
+                    data = data + " " + morphemes.getSurface().toString();
+                }
+                // data.push(word.getSurface().toString());
             }
+
         }
+        datas.push(data);
     }
+    return datas;
+};
 
-    return data;
-}
-
-module.exports = { analyzeMorphemes };
+export { analyzeMorphemes };
