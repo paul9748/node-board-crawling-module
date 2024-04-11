@@ -1,1 +1,1 @@
-export declare function analyzeMorphemes(text: string[]): Promise<string[]>;
+export declare function analyzeSentence(text: string[]): Promise<string[][]>;

@@ -5,7 +5,7 @@ export function processForRuliweb(posts: CommunityPost[]): CommunityPost[] {
     return posts.map(post => {
         post = {
             ...post,
-            data: post.title + " " + parser.parse(post.content).textContent.replace(/[\n\t]/g, "")
+            data: [post.title + " " + parser.parse(post.content).textContent.replace(/[\n\t]/g, " ").trim()]
         }
         const regex = /조회\s+(\d+)/;
 

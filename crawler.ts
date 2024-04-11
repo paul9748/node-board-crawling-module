@@ -8,7 +8,6 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
         const posts: CommunityPost[] = [];
         let currentPage = 1;
         let nextPageExists = true;
-
         while (nextPageExists) {
             const pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`;
             const response = await axios.get(pageUrl).catch((error) => {
@@ -66,9 +65,10 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                 const postTimestampElement = findNestedElement(post$, selectors.timestamp);
                 const postTimestampString = postTimestampElement ? postTimestampElement.text().trim() : "";
                 const postTime = parseDateString(postTimestampString);
+                console.log(postTime)
                 if (postTime < referenceTime || postTimestampString == "") {
                     stopCrawling = true;
-                    console.log(postTime, referenceTime);
+                    console.log(postTime, "to", parseDateString(posts[0].timestamp), referenceTime);
 
                     break;
                 }
@@ -82,7 +82,8 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     content: postContent,
                     commentCount: postCommentCount,
                     timestamp: postTimestampString,
-                    data: '',
+                    data: [""],
+                    data2: JSON
                 });
             }
 

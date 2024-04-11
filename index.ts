@@ -1,10 +1,9 @@
 import { crawlCommunityPosts } from './crawler.ts';
 import { processForRuliweb } from './siteProcessors.ts';
-import { analyzeMorphemes } from './koalanlpAnalyzer.js';
+import { analyzeSentence } from './koalanlpAnalyzer.js';
 import { CommunityPost } from './types.ts';
 import { exit } from 'process';
-import parser from 'node-html-parser'
-
+import { exec, execFile, spawn } from 'child_process';
 async function main() {
     // let text = "안녕하세요. 눈이 오는 설날 아침입니다. 좋습니다.";
     // let morphemes = await analyzeMorphemes([text]);
@@ -23,18 +22,53 @@ async function main() {
             upvotes: '.user_view,.like',
             content: '.view_content.autolink',
             commentCount: '.num_txt,.reply_count',
-            timestamp: '.regdate',
+            timestamp: '.user_info,.regdate',
         },
-        referenceTime: new Date('2024-04-02T08:42:00.000Z')
+        referenceTime: new Date('2024-04-11T07:29:08.000Z')
     })
         .then(async posts => {
             let processedData = processForRuliweb(posts);
             // 배열의 각 요소에 대해 analyzeMorphemes를 실행하여 data 속성에 결과를 추가
-            for (let post of processedData) {
-                let morphemes = await analyzeMorphemes([post.data]);
-                post.data = morphemes[0]; // analyzeMorphemes가 문자열 배열을 반환하므로 첫 번째 요소를 사용
-            }
-            console.log(processedData);
+            const postData = processedData.map(post => post.data[0]);
+            const analyzePostData = await analyzeSentence(postData);
+            // console.log(analyzePostData);
+            // console.log("analyzePostData:", JSON.stringify(analyzePostData));
+
+            console.log(analyzePostData)
+            const pythonProcess = spawn('python', ['sentiment_analysis.py'], { stdio: ['pipe', 'pipe', 'pipe'] });
+            pythonProcess.stdin.write(JSON.stringify(analyzePostData));
+            pythonProcess.stdin.end();
+
+            let stdoutHandled = false; // stdout 이벤트 핸들러 실행 여부를 나타내는 플래그 변수
+
+            pythonProcess.stdout.on('data', (data) => {
+                if (!stdoutHandled) { // 이벤트 핸들러가 실행되지 않은 경우에만 실행
+                    const decodedData = data.toString('utf-8');
+                    console.log(`stdout: ${decodedData}`);
+                    stdoutHandled = true; // 플래그 변수를 true로 설정하여 이후 이벤트 핸들러 실행을 방지
+                }
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                console.error(`stderr: ${data}`);
+            });
+
+            pythonProcess.on('close', (code) => {
+                console.log(`child process exited with code ${code}`);
+            });
+
+
+            // Python 스크립트의 출력(JSON)을 파싱
+            // const results = JSON.parse(stdout);
+            // console.log("results: " + results);
+            // // 각 결과를 해당 CommunityPost의 data2에 저장
+            // processedData.forEach((post, index) => {
+            //     post.data2 = results[index];
+
+            // });
+
+
+            // console.log(processedData);
         })
         .catch(error => {
             console.error('Error occurred during crawling:', error);

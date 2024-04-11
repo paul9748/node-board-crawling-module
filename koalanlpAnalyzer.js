@@ -1,34 +1,36 @@
-import { EUNJEON } from 'koalanlp/API.js';
-import { initialize } from 'koalanlp/Util.js';
+import { HNN } from 'koalanlp/API.js';
 import { Tagger } from 'koalanlp/proc.js';
+import { initialize } from 'koalanlp/Util.js';
 
 let initialized = false; // 초기화 추적을 위한 플래그
 
 // KoalaNLP가 아직 초기화되지 않았다면 초기화하는 함수
 const initializeKoalaNLP = async () => {
     if (!initialized) {
-        await initialize({ packages: { EUNJEON: '2.0.4' } });
+        await initialize({ packages: { HNN: '2.0.4' } });
         //verbose: true
         initialized = true;
     }
 };
 
 // 문자열을 형태소로 분석하는 함수
-const analyzeMorphemes = async (texts) => {
+const analyzeSentence = async (texts) => {
     await initializeKoalaNLP(); // KoalaNLP가 초기화되었는지 확인
     let datas = [];
-    const tagger = new Tagger(EUNJEON);
+    const tagger = new Tagger(HNN);
 
     for (const text of texts) {
         const tagged = await tagger(text);
-        let data = "";
+        let data = [];
         for (const sent of tagged) {
-            for (const word of sent) {
-                for (const morphemes of word) {
-                    data = data + " " + morphemes.getSurface().toString();
-                }
-                // data.push(word.getSurface().toString());
-            }
+            data.push(sent.surfaceString(' '));
+            // console.log(sent.surfaceString(" "));
+            // for (const word of sent) {
+            //     for (const morphemes of word) {
+            //         data = data + " " + morphemes.getSurface().toString();
+            //     }
+            // data.push(word.getSurface().toString());
+            // }
 
         }
         datas.push(data);
@@ -36,4 +38,4 @@ const analyzeMorphemes = async (texts) => {
     return datas;
 };
 
-export { analyzeMorphemes };
+export { analyzeSentence };
