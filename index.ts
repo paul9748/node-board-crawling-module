@@ -24,7 +24,7 @@ async function main() {
             commentCount: '.num_txt,.reply_count',
             timestamp: '.user_info,.regdate',
         },
-        referenceTime: new Date('2024-04-11T07:29:08.000Z')
+        referenceTime: new Date('2024-04-11T08:21:32.000Z')
     })
         .then(async posts => {
             let processedData = processForRuliweb(posts);
@@ -40,11 +40,16 @@ async function main() {
             pythonProcess.stdin.end();
 
             let stdoutHandled = false; // stdout 이벤트 핸들러 실행 여부를 나타내는 플래그 변수
-
+            pythonProcess.stdout.setEncoding('utf-8');
             pythonProcess.stdout.on('data', (data) => {
                 if (!stdoutHandled) { // 이벤트 핸들러가 실행되지 않은 경우에만 실행
-                    const decodedData = data.toString('utf-8');
-                    console.log(`stdout: ${decodedData}`);
+                    const decodedStdout = data.toString('utf-8');
+                    const results = JSON.parse(decodedStdout);
+                    // console.log(`stdout: ${JSON.stringify(results)}`);
+                    processedData.forEach((post, index) => {
+                        post.data2 = (results[index]);
+                    });
+                    console.log(processedData);
                     stdoutHandled = true; // 플래그 변수를 true로 설정하여 이후 이벤트 핸들러 실행을 방지
                 }
             });
@@ -62,13 +67,7 @@ async function main() {
             // const results = JSON.parse(stdout);
             // console.log("results: " + results);
             // // 각 결과를 해당 CommunityPost의 data2에 저장
-            // processedData.forEach((post, index) => {
-            //     post.data2 = results[index];
 
-            // });
-
-
-            // console.log(processedData);
         })
         .catch(error => {
             console.error('Error occurred during crawling:', error);

@@ -1,6 +1,9 @@
 from transformers import pipeline
 import sys
 import json
+import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
 
 # 텍스트 분류 파이프라인 초기화
 pipe = pipeline("text-classification",
@@ -38,7 +41,6 @@ if __name__ == '__main__':
     input_data = sys.stdin.read()
     if input_data.strip():  # 입력이 비어 있지 않은 경우에만 JSON 파싱 시도
         input_groups = json.loads(input_data)
-        # print(json.dumps(input_groups, ensure_ascii=False))
         all_results = []
         for input_texts in input_groups:
             # 각 그룹별로 분석 실행
