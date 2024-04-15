@@ -1,4 +1,4 @@
-import { CommunityPost } from './types.ts';
+import { CommunityPost } from './types';
 import parser from 'node-html-parser'
 
 export function processForRuliweb(posts: CommunityPost[]): CommunityPost[] {
