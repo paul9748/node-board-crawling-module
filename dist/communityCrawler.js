@@ -47,7 +47,7 @@ async function ruliwebBestCrawler(date) {
                 postLink: '.title_wrapper',
                 author: '.user_view,.nick',
                 views: '.user_view ,.user_info',
-                upvotes: '.user_view,.like',
+                upvotes: '.like_value',
                 content: '.view_content.autolink',
                 commentCount: '.num_txt,.reply_count',
                 timestamp: '.user_info,.regdate',
