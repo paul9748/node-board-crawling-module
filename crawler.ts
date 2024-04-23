@@ -64,11 +64,11 @@ export async function crawlCommunityPosts(options: CrawlOptions, matcher: RegExp
 
                 const postTimestampElement = findNestedElement(post$, selectors.timestamp);
                 const postTimestampString = postTimestampElement ? postTimestampElement.text().trim() : "";
-                const postTime = parseDateString(postTimestampString);
+                const postTime = parseDateString(postTimestampString, matcher);
                 console.log(postTime)
-                if (postTime < referenceTime || postTimestampString == "") {
+                if (postTime <= referenceTime || postTimestampString == "") {
                     stopCrawling = true;
-                    console.log(postTime, "to", parseDateString(posts[0].timestamp), referenceTime);
+                    console.log(postTime, "to", parseDateString(posts[0].timestamp, matcher), referenceTime);
 
                     break;
                 }
@@ -81,7 +81,7 @@ export async function crawlCommunityPosts(options: CrawlOptions, matcher: RegExp
                     upvotes: postUpvotes,
                     content: postContent,
                     commentCount: postCommentCount,
-                    timestamp: postTimestampString,
+                    timestamp: postTime.toString(),
                     data: [""],
                     data2: JSON
                 });
@@ -101,8 +101,8 @@ export async function crawlCommunityPosts(options: CrawlOptions, matcher: RegExp
     }
 }
 
-function parseDateString(dateString: string): Date {
-    const match = dateString.match(/(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/);
+function parseDateString(dateString: string, matcher: RegExp): Date {
+    const match = dateString.match(matcher);
 
     if (match) {
         const [_, year, month, day, hour, minute, second] = match;
