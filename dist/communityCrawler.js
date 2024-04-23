@@ -5,8 +5,8 @@ const crawler_1 = require("./crawler");
 const siteProcessors_1 = require("./siteProcessors");
 const koalanlpAnalyzer_1 = require("./koalanlpAnalyzer");
 const child_process_1 = require("child_process");
-async function analyzePosts(posts) {
-    let processedData = (0, siteProcessors_1.processForRuliweb)(posts);
+async function analyzePosts(posts, options) {
+    const processedData = (0, siteProcessors_1.processCommunityPosts)(posts, options);
     const postData = processedData.map(post => post.data[0]);
     const analyzePostData = await (0, koalanlpAnalyzer_1.analyzeSentence)(postData);
     return { processedData, analyzePostData };
@@ -37,7 +37,6 @@ function runPythonScript(data) {
     });
 }
 async function ruliwebBestCrawler(date) {
-    let dateMatcherForRuliweb = /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/;
     try {
         const options = {
             postListUrl: 'https://bbs.ruliweb.com/best/humor_only/',
@@ -52,10 +51,14 @@ async function ruliwebBestCrawler(date) {
                 commentCount: '.num_txt,.reply_count',
                 timestamp: '.user_info,.regdate',
             },
+            options: {
+                timestamp: /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/,
+                views: /조회\s+(\d+)/,
+            },
             referenceTime: date,
         };
-        const posts = await (0, crawler_1.crawlCommunityPosts)(options, dateMatcherForRuliweb);
-        const { processedData, analyzePostData } = await analyzePosts(posts);
+        const posts = await (0, crawler_1.crawlCommunityPosts)(options);
+        const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
         const results = await runPythonScript(analyzePostData);
         processedData.forEach((post, index) => {
             post.data2 = results[index];

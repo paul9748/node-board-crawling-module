@@ -1,33 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.processForOtherSite = exports.processForRuliweb = void 0;
+exports.processCommunityPosts = void 0;
 const node_html_parser_1 = require("node-html-parser");
-function processForRuliweb(posts) {
+function cleanTextContent(content) {
+    return node_html_parser_1.default.parse(content).textContent.replace(/[\n\t]/g, " ").trim();
+}
+function processCommunityPosts(posts, options) {
     return posts.map(post => {
-        post = {
-            ...post,
-            data: [post.title + " " + node_html_parser_1.default.parse(post.content).textContent.replace(/[\n\t]/g, " ").trim()]
-        };
-        const regex = /조회\s+(\d+)/;
-        const match = post.views.match(regex);
-        if (match) {
-            const views = parseInt(match[1]);
-            if (!isNaN(views)) {
-                return {
-                    ...post,
-                    views: views.toString()
-                };
+        const cleanedContent = cleanTextContent(post.content);
+        const data = [post.title + " " + cleanedContent];
+        const processedPost = { ...post, data };
+        Object.entries(options).forEach(([key, value]) => {
+            if (key !== 'timestamp' && value && processedPost[key] && typeof processedPost[key] === 'string') {
+                const matchedPart = processedPost[key].match(value);
+                processedPost[key] = matchedPart ? matchedPart[1] : '';
             }
-        }
-        return {
-            ...post,
-            views: "0"
-        };
+        });
+        return processedPost;
     });
 }
-exports.processForRuliweb = processForRuliweb;
-function processForOtherSite(posts) {
-    return posts;
-}
-exports.processForOtherSite = processForOtherSite;
+exports.processCommunityPosts = processCommunityPosts;
 //# sourceMappingURL=siteProcessors.js.map
