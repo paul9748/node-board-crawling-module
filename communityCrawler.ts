@@ -1,11 +1,11 @@
 import { crawlCommunityPosts } from './crawler';
-import { processForRuliweb } from './siteProcessors';
+import { processCommunityPosts } from './siteProcessors';
 import { analyzeSentence } from './koalanlpAnalyzer';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
-import { CommunityPost, CrawlOptions } from './types'; // 인터페이스 가져오기
+import { CommunityPost, CrawlOptions, ProcessingOptions } from './types';
 
-async function analyzePosts(posts: CommunityPost[]): Promise<{ processedData: CommunityPost[], analyzePostData: any[] }> {
-    let processedData = processForRuliweb(posts);
+async function analyzePosts(posts: CommunityPost[], options: ProcessingOptions): Promise<{ processedData: CommunityPost[], analyzePostData: any[] }> {
+    const processedData = processCommunityPosts(posts, options);
     const postData = processedData.map(post => post.data[0]);
     const analyzePostData = await analyzeSentence(postData);
     return { processedData, analyzePostData };
@@ -42,7 +42,6 @@ function runPythonScript(data: any): Promise<any[]> {
 }
 
 export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
-    let dateMatcherForRuliweb = /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/;
     try {
         const options: CrawlOptions = {
             postListUrl: 'https://bbs.ruliweb.com/best/humor_only/',
@@ -57,11 +56,14 @@ export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
                 commentCount: '.num_txt,.reply_count',
                 timestamp: '.user_info,.regdate',
             },
+            options: {
+                timestamp: /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/,
+                views: /조회\s+(\d+)/,
+            },
             referenceTime: date,
         };
-        const posts = await crawlCommunityPosts(options, dateMatcherForRuliweb);
-
-        const { processedData, analyzePostData } = await analyzePosts(posts);
+        const posts = await crawlCommunityPosts(options);
+        const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
         const results = await runPythonScript(analyzePostData);
 
         processedData.forEach((post, index) => {
@@ -74,15 +76,3 @@ export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
         throw error;
     }
 }
-
-// async function main() {
-//     try {
-//         const date = new Date('2024-04-15T06:39:40.000Z');
-//         let data = await ruliwebBestCrawler(date);
-//         console.log("data :", data);
-//     } catch (error) {
-//         console.error('Error occurred in main:', error);
-//     }
-// }
-
-// main();

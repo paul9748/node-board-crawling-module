@@ -2,103 +2,87 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import { CommunityPost, CrawlOptions } from './types';
 
-export async function crawlCommunityPosts(options: CrawlOptions, matcher: RegExp): Promise<CommunityPost[]> {
+export async function crawlCommunityPosts(options: CrawlOptions): Promise<CommunityPost[]> {
+    const { postListUrl, pageQueryParam, selectors, referenceTime, options: matchers } = options;
+    const posts: CommunityPost[] = [];
+
     try {
-        const { postListUrl, pageQueryParam, selectors, referenceTime } = options;
-        const posts: CommunityPost[] = [];
         let currentPage = 1;
         let nextPageExists = true;
+
         while (nextPageExists) {
             const pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`;
-            const response = await axios.get(pageUrl).catch((error) => {
-                console.error(`Error occurred while fetching ${pageUrl}:`, error);
-                nextPageExists = false;
-                return null;
-            });
+            const response = await axios.get(pageUrl);
 
-            if (!response) {
-                break;
-            }
-
-            const $ = await cheerio.load(response.data);
+            const $ = cheerio.load(response.data);
             let stopCrawling = false;
 
-            for (const element of $(selectors.postLink)) {
+            $(selectors.postLink).each(async (index, element) => {
                 const postLink = $(element).attr('href');
                 if (!postLink) {
                     console.warn('Post link not found, skipping post');
-                    continue;
+                    return;
                 }
-
 
                 const postPageUrl = new URL(postLink, postListUrl).href;
-                const postResponse = await axios.get(postPageUrl).catch((error) => {
-                    console.error(`Error occurred while fetching ${postPageUrl}:`, error);
-                    return null;
-                });
+                const postResponse = await axios.get(postPageUrl);
 
-                if (!postResponse) {
-                    continue;
-                }
+                const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
 
-                const postHtml = postResponse.data;
-                const post$ = cheerio.load(postHtml);
+                const postTime = parseDateString(timestamp, matchers.timestamp);
 
-                const postTitleElement = findNestedElement(post$, selectors.title);
-                const postTitle = postTitleElement ? postTitleElement.text().trim() : "";
-
-                const postAuthorElement = findNestedElement(post$, selectors.author);
-                const postAuthor = postAuthorElement ? postAuthorElement.text().trim() : "";
-
-                const postViewsElement = findNestedElement(post$, selectors.views);
-                const postViews = postViewsElement ? postViewsElement.text().trim() : "";
-
-                const postUpvotesElement = findNestedElement(post$, selectors.upvotes);
-                const postUpvotes = postUpvotesElement ? postUpvotesElement.text().trim() : "";
-
-                const postContentElement = findNestedElement(post$, selectors.content);
-                const postContent = postContentElement ? postContentElement.html() : "";
-
-                const postCommentCountElement = findNestedElement(post$, selectors.commentCount);
-                const postCommentCount = postCommentCountElement ? postCommentCountElement.text().trim() : "";
-
-                const postTimestampElement = findNestedElement(post$, selectors.timestamp);
-                const postTimestampString = postTimestampElement ? postTimestampElement.text().trim() : "";
-                const postTime = parseDateString(postTimestampString, matcher);
-                console.log(postTime)
-                if (postTime <= referenceTime || postTimestampString == "") {
+                if (postTime <= referenceTime || timestamp === "") {
                     stopCrawling = true;
-                    console.log(postTime, "to", parseDateString(posts[0].timestamp, matcher), referenceTime);
-
-                    break;
+                    return false; // Breaks out of the loop
                 }
 
                 posts.push({
-                    title: postTitle,
+                    title,
                     link: postPageUrl,
-                    author: postAuthor,
-                    views: postViews,
-                    upvotes: postUpvotes,
-                    content: postContent,
-                    commentCount: postCommentCount,
+                    author,
+                    views,
+                    upvotes,
+                    content,
+                    commentCount,
                     timestamp: postTime.toString(),
                     data: [""],
                     data2: JSON
                 });
-            }
+            });
 
-            if (stopCrawling) {
-                break;
-            }
+            if (stopCrawling) break;
 
             currentPage++;
         }
-
-        return posts;
     } catch (error) {
         console.error('Error occurred while crawling:', error);
-        return [];
     }
+
+    return posts;
+}
+
+function extractPostInfo(html: string, selectors: any,): any {
+    const $ = cheerio.load(html);
+
+    return {
+        title: findTextContent($, selectors.title),
+        author: findTextContent($, selectors.author),
+        views: findTextContent($, selectors.views),
+        upvotes: findTextContent($, selectors.upvotes),
+        content: findHtmlContent($, selectors.content),
+        commentCount: findTextContent($, selectors.commentCount),
+        timestamp: findTextContent($, selectors.timestamp)
+    };
+}
+
+function findTextContent($: any, selector: string): string {
+    const element = $(selector);
+    return element ? element.text().trim() : "";
+}
+
+function findHtmlContent($: any, selector: string): string {
+    const element = $(selector);
+    return element ? element.html() : "";
 }
 
 function parseDateString(dateString: string, matcher: RegExp): Date {
@@ -112,22 +96,3 @@ function parseDateString(dateString: string, matcher: RegExp): Date {
         return new Date();
     }
 }
-
-function findNestedElement(post$: any, path: string): any {
-    const selectors = path.split(',').map(selector => selector.trim());
-    let element: any = null;
-
-    for (const selector of selectors) {
-        if (element === null) {
-            element = post$(selector);
-        } else {
-            element = element.find(selector);
-        }
-
-        if (element.length === 0) {
-            return null;
-        }
-    }
-    return element;
-}
-

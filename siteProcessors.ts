@@ -1,35 +1,23 @@
-import { CommunityPost } from './types';
+import { CommunityPost, ProcessingOptions } from './types';
 import parser from 'node-html-parser'
-
-export function processForRuliweb(posts: CommunityPost[]): CommunityPost[] {
-    return posts.map(post => {
-        post = {
-            ...post,
-            data: [post.title + " " + parser.parse(post.content).textContent.replace(/[\n\t]/g, " ").trim()]
-        }
-        const regex = /조회\s+(\d+)/;
-
-        const match = post.views.match(regex);
-
-        if (match) {
-            const views = parseInt(match[1]);
-            if (!isNaN(views)) {
-                return {
-                    ...post,
-                    views: views.toString()
-                };
-            }
-        }
-
-        return {
-            ...post,
-            views: "0"
-        };
-    });
+function cleanTextContent(content: string): string {
+    return parser.parse(content).textContent.replace(/[\n\t]/g, " ").trim();
 }
 
-// 새로운 사이트 처리 함수를 추가할 수 있습니다.
-export function processForOtherSite(posts: CommunityPost[]): CommunityPost[] {
-    // 다른 사이트의 포스트 데이터 처리 로직을 구현합니다.
-    return posts;
+export function processCommunityPosts(posts: CommunityPost[], options: ProcessingOptions): CommunityPost[] {
+    return posts.map(post => {
+        const cleanedContent = cleanTextContent(post.content);
+        const data = [post.title + " " + cleanedContent];
+
+        const processedPost: CommunityPost = { ...post, data };
+
+        Object.entries(options).forEach(([key, value]) => {
+            if (key !== 'timestamp' && value && processedPost[key] && typeof processedPost[key] === 'string') {
+                const matchedPart = processedPost[key].match(value);
+                processedPost[key] = matchedPart ? matchedPart[1] : '';
+            }
+        });
+
+        return processedPost;
+    });
 }

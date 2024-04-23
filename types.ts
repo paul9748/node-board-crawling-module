@@ -10,7 +10,17 @@ export interface CommunityPost {
     data: string[];
     data2: JSON;
 }
+export interface ProcessingOptions {
+    title?: RegExp;
+    link?: RegExp;
+    author?: RegExp;
+    views?: RegExp;
+    upvotes?: RegExp;
+    content?: RegExp;
+    commentCount?: RegExp;
+    timestamp?: RegExp;
 
+}
 export interface CrawlOptions {
     postListUrl: string;
     pageQueryParam: string;
@@ -24,5 +34,6 @@ export interface CrawlOptions {
         commentCount: string;
         timestamp: string;
     };
+    options: ProcessingOptions;
     referenceTime: Date;
 }
