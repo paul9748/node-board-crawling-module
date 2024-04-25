@@ -12,35 +12,44 @@ async function crawlCommunityPosts(options) {
         while (nextPageExists) {
             const pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`;
             const response = await axios_1.default.get(pageUrl);
+            console.log(pageUrl);
             const $ = cheerio_1.default.load(response.data);
             let stopCrawling = false;
-            $(selectors.postLink).each(async (index, element) => {
+            for (const element of $(selectors.postLink)) {
                 const postLink = $(element).attr('href');
                 if (!postLink) {
                     console.warn('Post link not found, skipping post');
-                    return;
+                    continue;
                 }
                 const postPageUrl = new URL(postLink, postListUrl).href;
-                const postResponse = await axios_1.default.get(postPageUrl);
-                const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
-                const postTime = parseDateString(timestamp, matchers.timestamp);
-                if (postTime <= referenceTime || timestamp === "") {
-                    stopCrawling = true;
-                    return false;
+                console.log(postPageUrl);
+                try {
+                    const postResponse = await axios_1.default.get(postPageUrl);
+                    await delay(1000 + Math.random() * 2000);
+                    const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
+                    const postTime = parseDateString(timestamp, matchers.timestamp);
+                    console.log(postTime, "//", referenceTime);
+                    if (postTime <= referenceTime || timestamp === "") {
+                        stopCrawling = true;
+                        break;
+                    }
+                    posts.push({
+                        title,
+                        link: postPageUrl,
+                        author,
+                        views,
+                        upvotes,
+                        content,
+                        commentCount,
+                        timestamp: postTime.toString(),
+                        data: [""],
+                        data2: JSON
+                    });
                 }
-                posts.push({
-                    title,
-                    link: postPageUrl,
-                    author,
-                    views,
-                    upvotes,
-                    content,
-                    commentCount,
-                    timestamp: postTime.toString(),
-                    data: [""],
-                    data2: JSON
-                });
-            });
+                catch (error) {
+                    console.error('Error occurred while crawling post:', error);
+                }
+            }
             if (stopCrawling)
                 break;
             currentPage++;
@@ -82,5 +91,8 @@ function parseDateString(dateString, matcher) {
         console.error('Invalid date string:', dateString);
         return new Date();
     }
+}
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 //# sourceMappingURL=crawler.js.map
