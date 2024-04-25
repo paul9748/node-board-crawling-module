@@ -49,12 +49,12 @@ export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
             selectors: {
                 title: '.subject_inner_text',
                 postLink: '.title_wrapper',
-                author: '.user_view,.nick',
-                views: '.user_view ,.user_info',
+                author: ' .user_info .nick',
+                views: '.user_view .user_info',
                 upvotes: '.like_value',
                 content: '.view_content.autolink',
-                commentCount: '.num_txt,.reply_count',
-                timestamp: '.user_info,.regdate',
+                commentCount: 'span.num_txt > .reply_count',
+                timestamp: '.user_info .regdate',
             },
             options: {
                 timestamp: /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/,

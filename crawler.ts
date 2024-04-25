@@ -13,42 +13,48 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
         while (nextPageExists) {
             const pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`;
             const response = await axios.get(pageUrl);
-
+            console.log(pageUrl);
             const $ = cheerio.load(response.data);
             let stopCrawling = false;
 
-            $(selectors.postLink).each(async (index, element) => {
+            for (const element of $(selectors.postLink)) {
                 const postLink = $(element).attr('href');
                 if (!postLink) {
                     console.warn('Post link not found, skipping post');
-                    return;
+                    continue;
                 }
 
                 const postPageUrl = new URL(postLink, postListUrl).href;
-                const postResponse = await axios.get(postPageUrl);
+                console.log(postPageUrl);
 
-                const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
+                try {
+                    const postResponse = await axios.get(postPageUrl);
+                    await delay(1000 + Math.random() * 2000);
+                    const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
 
-                const postTime = parseDateString(timestamp, matchers.timestamp);
+                    const postTime = parseDateString(timestamp, matchers.timestamp);
+                    console.log(postTime, "//", referenceTime);
+                    if (postTime <= referenceTime || timestamp === "") {
+                        stopCrawling = true;
+                        break; // Breaks out of the loop
+                    }
 
-                if (postTime <= referenceTime || timestamp === "") {
-                    stopCrawling = true;
-                    return false; // Breaks out of the loop
+                    posts.push({
+                        title,
+                        link: postPageUrl,
+                        author,
+                        views,
+                        upvotes,
+                        content,
+                        commentCount,
+                        timestamp: postTime.toString(),
+                        data: [""],
+                        data2: JSON
+                    });
+                } catch (error) {
+                    console.error('Error occurred while crawling post:', error);
                 }
-
-                posts.push({
-                    title,
-                    link: postPageUrl,
-                    author,
-                    views,
-                    upvotes,
-                    content,
-                    commentCount,
-                    timestamp: postTime.toString(),
-                    data: [""],
-                    data2: JSON
-                });
-            });
+            }
 
             if (stopCrawling) break;
 
@@ -61,7 +67,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
     return posts;
 }
 
-function extractPostInfo(html: string, selectors: any,): any {
+function extractPostInfo(html: string, selectors: any): any {
     const $ = cheerio.load(html);
 
     return {
@@ -95,4 +101,8 @@ function parseDateString(dateString: string, matcher: RegExp): Date {
         console.error('Invalid date string:', dateString);
         return new Date();
     }
+}
+
+function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
