@@ -76,3 +76,21 @@ export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
         throw error;
     }
 }
+
+export async function Crawler(options: CrawlOptions): Promise<CommunityPost[]> {
+    try {
+        const posts = await crawlCommunityPosts(options);
+        const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
+        const results = await runPythonScript(analyzePostData);
+
+        processedData.forEach((post, index) => {
+            post.data2 = results[index];
+        });
+
+        return processedData;
+    } catch (error) {
+        console.error('Error occurred during crawling:', error);
+        throw error;
+    }
+}
+
