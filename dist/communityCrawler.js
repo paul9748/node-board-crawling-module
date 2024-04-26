@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ruliwebBestCrawler = void 0;
+exports.Crawler = exports.ruliwebBestCrawler = void 0;
 const crawler_1 = require("./crawler");
 const siteProcessors_1 = require("./siteProcessors");
 const koalanlpAnalyzer_1 = require("./koalanlpAnalyzer");
@@ -71,4 +71,20 @@ async function ruliwebBestCrawler(date) {
     }
 }
 exports.ruliwebBestCrawler = ruliwebBestCrawler;
+async function Crawler(options) {
+    try {
+        const posts = await (0, crawler_1.crawlCommunityPosts)(options);
+        const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
+        const results = await runPythonScript(analyzePostData);
+        processedData.forEach((post, index) => {
+            post.data2 = results[index];
+        });
+        return processedData;
+    }
+    catch (error) {
+        console.error('Error occurred during crawling:', error);
+        throw error;
+    }
+}
+exports.Crawler = Crawler;
 //# sourceMappingURL=communityCrawler.js.map
