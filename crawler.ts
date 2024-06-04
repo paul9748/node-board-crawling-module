@@ -1,6 +1,6 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
-import { CommunityPost, CrawlOptions } from './types';
+import { CommunityPost, CrawlOptions, ProcessingOptions } from './types';
 
 export async function crawlCommunityPosts(options: CrawlOptions): Promise<CommunityPost[]> {
     const { postListUrl, pageQueryParam, selectors, referenceTime, options: matchers } = options;
@@ -42,8 +42,8 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                 try {
                     const postResponse = await axios.get(postPageUrl, { headers: header });
                     await delay(1000 + Math.random() * 2000);
-                    const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
-
+                    const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors, matchers);
+                    console.log(views, isNaN(views))
                     const postTime = parseDateString(timestamp, matchers.timestamp);
                     console.log(postTime, "//", referenceTime);
                     if (postTime <= referenceTime || timestamp === "") {
@@ -79,27 +79,35 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
     return posts;
 }
 
-function extractPostInfo(html: string, selectors: any): any {
+function extractPostInfo(html: string, selectors: any, matchers: ProcessingOptions): any {
     const $ = cheerio.load(html);
 
     return {
-        title: findTextContent($, selectors.title),
-        author: findTextContent($, selectors.author),
-        views: findTextContent($, selectors.views),
-        upvotes: findTextContent($, selectors.upvotes),
-        content: findHtmlContent($, selectors.content),
-        commentCount: findTextContent($, selectors.commentCount),
-        timestamp: findTextContent($, selectors.timestamp)
+        title: findTextContent($, selectors.title, matchers.title),
+        author: findTextContent($, selectors.author, matchers.author),
+        views: parseInt(findTextContent($, selectors.views, matchers.views)),
+        upvotes: parseInt(findTextContent($, selectors.upvotes, matchers.upvotes)),
+        content: findHtmlContent($, selectors.content, matchers.content),
+        commentCount: findTextContent($, selectors.commentCount, matchers.commentCount),
+        timestamp: findTextContent($, selectors.timestamp),
     };
 }
 
-function findTextContent($: any, selector: string): string {
-    const element = $(selector);
+function findTextContent($: any, selector: string, matcher?: RegExp): string {
+    let element = $(selector);
+    if (matcher !== undefined && matcher !== null && matcher !== RegExp("/null/") && matcher !== RegExp("")) {
+        console.log(matcher);
+        element = element.filter((_, element) => matcher.test($(element).text().trim()));
+    }
     return element ? element.text().trim() : "";
 }
 
-function findHtmlContent($: any, selector: string): string {
-    const element = $(selector);
+function findHtmlContent($: any, selector: string, matcher?: RegExp): string {
+    let element = $(selector);
+    if (matcher !== undefined && matcher !== null && matcher !== RegExp("/null/") && matcher !== RegExp("")) {
+        console.log(matcher);
+        element = element.filter((_, element) => matcher.test($(element).text().trim()));
+    }
     return element ? element.html() : "";
 }
 
