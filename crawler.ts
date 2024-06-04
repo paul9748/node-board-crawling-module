@@ -7,17 +7,29 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
     const posts: CommunityPost[] = [];
 
     try {
-        let currentPage = 1;
+        let currentPage = selectors.startpage;
         let nextPageExists = true;
-
+        const header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+        }
         while (nextPageExists) {
-            const pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`;
-            const response = await axios.get(pageUrl);
-            console.log(pageUrl);
+            let pageUrl = ``;
+            if (postListUrl.includes("?")) {
+                pageUrl = `${postListUrl}&${pageQueryParam}=${currentPage}`
+            } else {
+                pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`
+            }
+            const response = await axios.get(pageUrl, {
+                headers: header
+            }); console.log(`Page URL: ${pageUrl}`);
+            // console.log(`Page HTML: ${response.data}`);
             const $ = cheerio.load(response.data);
             let stopCrawling = false;
-
-            for (const element of $(selectors.postLink)) {
+            let page = $(selectors.postLink);
+            if (page.length == 0) {
+                throw new Error('No posts found : ' + selectors.postLink);
+            }
+            for (const element of page) {
                 const postLink = $(element).attr('href');
                 if (!postLink) {
                     console.warn('Post link not found, skipping post');
@@ -28,7 +40,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                 console.log(postPageUrl);
 
                 try {
-                    const postResponse = await axios.get(postPageUrl);
+                    const postResponse = await axios.get(postPageUrl, { headers: header });
                     await delay(1000 + Math.random() * 2000);
                     const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors);
 

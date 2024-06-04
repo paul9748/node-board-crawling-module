@@ -26,6 +26,7 @@ export interface CrawlOptions {
     selectors: {
         title: string;
         postLink: string;
+        startpage: number;
         author: string;
         views: string;
         upvotes: string;
