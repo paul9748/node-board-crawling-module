@@ -11,12 +11,12 @@ export function processCommunityPosts(posts: CommunityPost[], options: Processin
 
         const processedPost: CommunityPost = { ...post, data };
 
-        Object.entries(options).forEach(([key, value]) => {
-            if (key !== 'timestamp' && value && processedPost[key] && typeof processedPost[key] === 'string') {
-                const matchedPart = processedPost[key].match(value);
-                processedPost[key] = matchedPart ? matchedPart[1] : '';
-            }
-        });
+        // Object.entries(options).forEach(([key, value]) => {
+        //     if (key !== 'timestamp' && value && processedPost[key] && typeof processedPost[key] === 'string') {
+        //         const matchedPart = processedPost[key].match(value);
+        //         processedPost[key] = matchedPart ? matchedPart[1] : '';
+        //     }
+        // });
 
         return processedPost;
     });

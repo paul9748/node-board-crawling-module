@@ -3,6 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.crawlCommunityPosts = void 0;
 const axios_1 = require("axios");
 const cheerio_1 = require("cheerio");
+const iconv = require("iconv-lite");
+const supportedEncodings = [
+    "utf-8", "utf-16le", "iso-8859-1", "windows-1252",
+    "euc-kr", "shift_jis", "gbk", "big5"
+];
 async function crawlCommunityPosts(options) {
     const { postListUrl, pageQueryParam, selectors, referenceTime, options: matchers } = options;
     const posts = [];
@@ -13,22 +18,16 @@ async function crawlCommunityPosts(options) {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         };
         while (nextPageExists) {
-            let pageUrl = ``;
-            if (postListUrl.includes("?")) {
-                pageUrl = `${postListUrl}&${pageQueryParam}=${currentPage}`;
-            }
-            else {
-                pageUrl = `${postListUrl}?${pageQueryParam}=${currentPage}`;
-            }
-            const response = await axios_1.default.get(pageUrl, {
-                headers: header
-            });
+            const pageUrl = postListUrl.includes("?")
+                ? `${postListUrl}&${pageQueryParam}=${currentPage}`
+                : `${postListUrl}?${pageQueryParam}=${currentPage}`;
+            const response = await axios_1.default.get(pageUrl, { headers: header });
             console.log(`Page URL: ${pageUrl}`);
-            const $ = cheerio_1.default.load(response.data);
+            const $ = cheerio_1.default.load(response.data, { decodeEntities: false });
             let stopCrawling = false;
-            let page = $(selectors.postLink);
+            const page = $(selectors.postLink);
             if (page.length == 0) {
-                throw new Error('No posts found : ' + selectors.postLink);
+                throw new Error('No posts found: ' + selectors.postLink);
             }
             for (const element of page) {
                 const postLink = $(element).attr('href');
@@ -39,24 +38,53 @@ async function crawlCommunityPosts(options) {
                 const postPageUrl = new URL(postLink, postListUrl).href;
                 console.log(postPageUrl);
                 try {
-                    const postResponse = await axios_1.default.get(postPageUrl, { headers: header });
+                    const postResponse = await axios_1.default.get(postPageUrl, {
+                        headers: header, responseType: 'arraybuffer',
+                    });
+                    const headers = JSON.stringify(response.headers).toLowerCase();
+                    let encoding = null;
+                    for (const enc of supportedEncodings) {
+                        if (headers.includes(enc.toLowerCase())) {
+                            console.log(`found encoding : ${enc}`);
+                            encoding = enc;
+                            break;
+                        }
+                    }
+                    if (!encoding) {
+                        const decodedHeaderData = iconv.decode(Buffer.from(response.data), 'utf-8');
+                        const $ = cheerio_1.default.load(decodedHeaderData);
+                        const headContent = $('head').html();
+                        console.log(`head content : ${headContent}`);
+                        if (headContent) {
+                            for (const enc of supportedEncodings) {
+                                if (headContent.includes(enc.toLowerCase())) {
+                                    console.log(`found encoding : ${enc}`);
+                                    encoding = enc;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!encoding) {
+                        console.log(`encoding : ${encoding}`);
+                        encoding = 'utf-8';
+                    }
+                    let rowData = Buffer.from(postResponse.data);
+                    let decodedData = iconv.decode(rowData, encoding);
                     await delay(1000 + Math.random() * 2000);
-                    const { title, author, views, upvotes, content, commentCount, timestamp } = extractPostInfo(postResponse.data, selectors, matchers);
-                    console.log(views, isNaN(views));
-                    const postTime = parseDateString(timestamp, matchers.timestamp);
-                    console.log(postTime, "//", referenceTime);
-                    if (postTime <= referenceTime || timestamp === "") {
+                    const postInfo = extractPostInfo(decodedData, selectors, matchers);
+                    if (!postInfo.timestamp) {
+                        console.warn('Timestamp not found, skipping post');
+                        continue;
+                    }
+                    const postTime = parseDateString(postInfo.timestamp, matchers.timestamp);
+                    if (postTime <= referenceTime || postInfo.timestamp === "") {
                         stopCrawling = true;
                         break;
                     }
                     posts.push({
-                        title,
+                        ...postInfo,
                         link: postPageUrl,
-                        author,
-                        views,
-                        upvotes,
-                        content,
-                        commentCount,
                         timestamp: postTime.toString(),
                         data: [""],
                         data2: JSON
@@ -78,31 +106,40 @@ async function crawlCommunityPosts(options) {
 }
 exports.crawlCommunityPosts = crawlCommunityPosts;
 function extractPostInfo(html, selectors, matchers) {
-    const $ = cheerio_1.default.load(html);
+    const $ = cheerio_1.default.load(html, {
+        decodeEntities: false
+    });
     return {
         title: findTextContent($, selectors.title, matchers.title),
         author: findTextContent($, selectors.author, matchers.author),
-        views: parseInt(findTextContent($, selectors.views, matchers.views)),
-        upvotes: parseInt(findTextContent($, selectors.upvotes, matchers.upvotes)),
+        views: parseInt(findTextContent($, selectors.views, matchers.views)) || 0,
+        upvotes: parseInt(findTextContent($, selectors.upvotes, matchers.upvotes)) || 0,
         content: findHtmlContent($, selectors.content, matchers.content),
-        commentCount: findTextContent($, selectors.commentCount, matchers.commentCount),
-        timestamp: findTextContent($, selectors.timestamp),
+        commentCount: parseInt(findTextContent($, selectors.commentCount, matchers.commentCount)) || 0,
+        timestamp: findTextContent($, selectors.timestamp) || ""
     };
 }
 function findTextContent($, selector, matcher) {
-    console.log(matcher);
-    let element = $(selector);
-    if (matcher !== undefined && matcher !== null && matcher !== RegExp("null") && matcher !== RegExp("")) {
-        element = element.filter((_, element) => matcher.test($(element).text().trim()));
+    const element = $(selector);
+    let content = element.text();
+    console.log(`Selector: ${selector}, Content: ${content}`);
+    if (!matcher || matcher.toString() === '/null/' || matcher.toString() === '/null/g') {
+        return content;
     }
-    return element ? element.text().trim() : "";
+    const matchedContent = [...content.matchAll(matcher)].map(match => match[0]).join(" ");
+    console.log(`Matcher: ${matcher}, Matched Content: ${matchedContent}`);
+    return matchedContent || content;
 }
 function findHtmlContent($, selector, matcher) {
-    let element = $(selector);
-    if (matcher !== undefined && matcher !== null && matcher !== RegExp("null") && matcher !== RegExp("")) {
-        element = element.filter((_, element) => matcher.test($(element).text().trim()));
+    const element = $(selector);
+    let content = element.html();
+    console.log(`Selector: ${selector}, HTML Content: ${content}`);
+    if (!matcher || matcher.toString() === '/null/' || matcher.toString() === '/null/g') {
+        return content;
     }
-    return element ? element.html() : "";
+    const matchedContent = [...content.matchAll(matcher)].map(match => match[0]).join(" ");
+    console.log(`Matcher: ${matcher}, Matched HTML Content: ${matchedContent}`);
+    return matchedContent || content;
 }
 function parseDateString(dateString, matcher) {
     const match = dateString.match(matcher);
