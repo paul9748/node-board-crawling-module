@@ -55,7 +55,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     let encoding = null; // 기본 인코딩 형식
                     for (const enc of supportedEncodings) {
                         if (headers.includes(enc.toLowerCase())) {
-                            console.log(`found encoding : ${enc}`);
+                            // console.log(`found encoding : ${enc}`);
                             encoding = enc;
                             break;
                         }
@@ -65,12 +65,12 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                         const decodedHeaderData = iconv.decode(Buffer.from(response.data), 'utf-8');
                         const $ = cheerio.load(decodedHeaderData);
                         const headContent = $('head').html();
-                        console.log(`head content : ${headContent}`);
+                        // console.log(`head content : ${headContent}`);
 
                         if (headContent) {
                             for (const enc of supportedEncodings) {
                                 if (headContent.includes(enc.toLowerCase())) {
-                                    console.log(`found encoding : ${enc}`);
+                                    // console.log(`found encoding : ${enc}`);
                                     encoding = enc;
                                     break;
                                 }
@@ -79,7 +79,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     }
                     //마지막까지 인코딩 형식을 찾지 못하면 기본적으로 UTF-8로 설정
                     if (!encoding) {
-                        console.log(`encoding : ${encoding}`);
+                        // console.log(`encoding : ${encoding}`);
                         encoding = 'utf-8';
                     }
                     let rowData = Buffer.from(postResponse.data);
@@ -145,28 +145,28 @@ function extractPostInfo(html: string, selectors: any, matchers: ProcessingOptio
 function findTextContent($: any, selector: string, matcher?: RegExp): string {
     const element = $(selector);
     let content = element.text();
-    console.log(`Selector: ${selector}, Content: ${content}`);
+    // console.log(`Selector: ${selector}, Content: ${content}`);
 
     if (!matcher || matcher.toString() === '/null/' || matcher.toString() === '/null/g') {
         return content;
     }
 
     const matchedContent = [...content.matchAll(matcher)].map(match => match[0]).join(" ");
-    console.log(`Matcher: ${matcher}, Matched Content: ${matchedContent}`);
+    // console.log(`Matcher: ${matcher}, Matched Content: ${matchedContent}`);
     return matchedContent || content;
 }
 
 function findHtmlContent($: any, selector: string, matcher?: RegExp): string {
     const element = $(selector);
     let content = element.html();
-    console.log(`Selector: ${selector}, HTML Content: ${content}`);
+    // console.log(`Selector: ${selector}, HTML Content: ${content}`);
 
     if (!matcher || matcher.toString() === '/null/' || matcher.toString() === '/null/g') {
         return content;
     }
 
     const matchedContent = [...content.matchAll(matcher)].map(match => match[0]).join(" ");
-    console.log(`Matcher: ${matcher}, Matched HTML Content: ${matchedContent}`);
+    // console.log(`Matcher: ${matcher}, Matched HTML Content: ${matchedContent}`);
     return matchedContent || content;
 }
 

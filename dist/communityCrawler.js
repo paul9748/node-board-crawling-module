@@ -75,9 +75,7 @@ exports.ruliwebBestCrawler = ruliwebBestCrawler;
 async function Crawler(options) {
     try {
         const posts = await (0, crawler_1.crawlCommunityPosts)(options);
-        console.log("posts : ", posts);
         const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
-        console.log("processedData : ", processedData);
         const results = await runPythonScript(analyzePostData);
         processedData.forEach((post, index) => {
             post.data2 = results[index];

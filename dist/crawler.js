@@ -45,7 +45,6 @@ async function crawlCommunityPosts(options) {
                     let encoding = null;
                     for (const enc of supportedEncodings) {
                         if (headers.includes(enc.toLowerCase())) {
-                            console.log(`found encoding : ${enc}`);
                             encoding = enc;
                             break;
                         }
@@ -54,11 +53,9 @@ async function crawlCommunityPosts(options) {
                         const decodedHeaderData = iconv.decode(Buffer.from(response.data), 'utf-8');
                         const $ = cheerio_1.default.load(decodedHeaderData);
                         const headContent = $('head').html();
-                        console.log(`head content : ${headContent}`);
                         if (headContent) {
                             for (const enc of supportedEncodings) {
                                 if (headContent.includes(enc.toLowerCase())) {
-                                    console.log(`found encoding : ${enc}`);
                                     encoding = enc;
                                     break;
                                 }
@@ -66,7 +63,6 @@ async function crawlCommunityPosts(options) {
                         }
                     }
                     if (!encoding) {
-                        console.log(`encoding : ${encoding}`);
                         encoding = 'utf-8';
                     }
                     let rowData = Buffer.from(postResponse.data);
@@ -122,23 +118,19 @@ function extractPostInfo(html, selectors, matchers) {
 function findTextContent($, selector, matcher) {
     const element = $(selector);
     let content = element.text();
-    console.log(`Selector: ${selector}, Content: ${content}`);
     if (!matcher || matcher.toString() === '/null/' || matcher.toString() === '/null/g') {
         return content;
     }
     const matchedContent = [...content.matchAll(matcher)].map(match => match[0]).join(" ");
-    console.log(`Matcher: ${matcher}, Matched Content: ${matchedContent}`);
     return matchedContent || content;
 }
 function findHtmlContent($, selector, matcher) {
     const element = $(selector);
     let content = element.html();
-    console.log(`Selector: ${selector}, HTML Content: ${content}`);
     if (!matcher || matcher.toString() === '/null/' || matcher.toString() === '/null/g') {
         return content;
     }
     const matchedContent = [...content.matchAll(matcher)].map(match => match[0]).join(" ");
-    console.log(`Matcher: ${matcher}, Matched HTML Content: ${matchedContent}`);
     return matchedContent || content;
 }
 function parseDateString(dateString, matcher) {

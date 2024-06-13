@@ -81,9 +81,9 @@ export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
 export async function Crawler(options: CrawlOptions): Promise<CommunityPost[]> {
     try {
         const posts = await crawlCommunityPosts(options);
-        console.log("posts : ", posts);
+        // console.log("posts : ", posts);
         const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
-        console.log("processedData : ", processedData);
+        // console.log("processedData : ", processedData);
         const results = await runPythonScript(analyzePostData);
 
         processedData.forEach((post, index) => {
