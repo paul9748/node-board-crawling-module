@@ -1,7 +1,6 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 import * as iconv from "iconv-lite";
-// import * as fs from 'fs';
 
 import { CommunityPost, CrawlOptions, ProcessingOptions } from './types';
 
@@ -48,9 +47,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     const postResponse = await axios.get(postPageUrl, {
                         headers: header, responseType: 'arraybuffer',
                     });
-                    // console.log(typeof postResponse.data);
-                    // console.log(postResponse.data);
-                    // console.log(`test data : ${postResponse.data.toString('UTF-8')}`);
+
                     const headers = JSON.stringify(response.headers).toLowerCase();
                     let encoding = null; // 기본 인코딩 형식
                     for (const enc of supportedEncodings) {
@@ -84,11 +81,6 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     }
                     let rowData = Buffer.from(postResponse.data);
                     let decodedData = iconv.decode(rowData, encoding);
-                    // console.log(postResponse.headers['charset']);
-                    // let data2 = iconv.decode(testData, 'utf-8');
-                    // await saveResponseToFile('postResponse_utf8.txt', data2);
-                    // await saveResponseToFile('postResponse_euckr.txt', data1);
-                    // // 파일로 저장
                     await delay(1000 + Math.random() * 2000);
                     const postInfo = extractPostInfo(decodedData, selectors, matchers);
 
@@ -185,11 +177,3 @@ function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// async function saveResponseToFile(fileName, data) {
-//     try {
-//         await fs.promises.writeFile(fileName, data);
-//         console.log(`Response saved to file: ${fileName}`);
-//     } catch (error) {
-//         console.error('Error occurred while saving response to file:', error);
-//     }
-// }

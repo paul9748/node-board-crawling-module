@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Crawler = exports.ruliwebBestCrawler = void 0;
+exports.Crawler = void 0;
 const crawler_1 = require("./crawler");
 const siteProcessors_1 = require("./siteProcessors");
 const koalanlpAnalyzer_1 = require("./koalanlpAnalyzer");
@@ -36,42 +36,6 @@ function runPythonScript(data) {
         });
     });
 }
-async function ruliwebBestCrawler(date) {
-    try {
-        const options = {
-            postListUrl: 'https://bbs.ruliweb.com/best/humor_only/',
-            pageQueryParam: 'page',
-            selectors: {
-                title: '.subject_inner_text',
-                postLink: '.title_wrapper',
-                startpage: 1,
-                author: ' .user_info .nick',
-                views: '.user_view .user_info',
-                upvotes: '.like_value',
-                content: '.view_content.autolink',
-                commentCount: 'span.num_txt > .reply_count',
-                timestamp: '.user_info > .regdate',
-            },
-            options: {
-                timestamp: /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/,
-                views: /조회\s+(\d+)/,
-            },
-            referenceTime: date,
-        };
-        const posts = await (0, crawler_1.crawlCommunityPosts)(options);
-        const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
-        const results = await runPythonScript(analyzePostData);
-        processedData.forEach((post, index) => {
-            post.data2 = results[index];
-        });
-        return processedData;
-    }
-    catch (error) {
-        console.error('Error occurred during crawling:', error);
-        throw error;
-    }
-}
-exports.ruliwebBestCrawler = ruliwebBestCrawler;
 async function Crawler(options) {
     try {
         const posts = await (0, crawler_1.crawlCommunityPosts)(options);

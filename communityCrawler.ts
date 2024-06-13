@@ -41,42 +41,6 @@ function runPythonScript(data: any): Promise<any[]> {
     });
 }
 
-export async function ruliwebBestCrawler(date: Date): Promise<CommunityPost[]> {
-    try {
-        const options: CrawlOptions = {
-            postListUrl: 'https://bbs.ruliweb.com/best/humor_only/',
-            pageQueryParam: 'page',
-            selectors: {
-                title: '.subject_inner_text',
-                postLink: '.title_wrapper',
-                startpage: 1,
-                author: ' .user_info .nick',
-                views: '.user_view .user_info',
-                upvotes: '.like_value',
-                content: '.view_content.autolink',
-                commentCount: 'span.num_txt > .reply_count',
-                timestamp: '.user_info > .regdate',
-            },
-            options: {
-                timestamp: /(\d{4})\.(\d{2})\.(\d{2}) \((\d{2}):(\d{2}):(\d{2})\)/,
-                views: /조회\s+(\d+)/,
-            },
-            referenceTime: date,
-        };
-        const posts = await crawlCommunityPosts(options);
-        const { processedData, analyzePostData } = await analyzePosts(posts, options.options);
-        const results = await runPythonScript(analyzePostData);
-
-        processedData.forEach((post, index) => {
-            post.data2 = results[index];
-        });
-
-        return processedData;
-    } catch (error) {
-        console.error('Error occurred during crawling:', error);
-        throw error;
-    }
-}
 
 export async function Crawler(options: CrawlOptions): Promise<CommunityPost[]> {
     try {
