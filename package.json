@@ -6,7 +6,8 @@
   "scripts": {
     "start": "ts-node communityCrawler.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preinstall": "python -m pip install -r python_requirements.txt"
   },
   "files": [
     "dist/**/*.js",
