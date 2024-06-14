@@ -1,5 +1,5 @@
 {
-  "name": "community_crawler",
+  "name": "@paul9748/community_crawler",
   "version": "1.0.0",
   "description": "",
   "main": "dist/communityCrawler.js",
@@ -34,5 +34,8 @@
     "tslib": "^2.6.2",
     "typescript": "^5.4.5"
   },
-  "type": "commonjs"
+  "type": "commonjs",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  }
 }
