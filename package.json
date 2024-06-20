@@ -1,6 +1,6 @@
 {
   "name": "@paul9748/community_crawler",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "dist/communityCrawler.js",
   "scripts": {
