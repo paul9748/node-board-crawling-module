@@ -61,3 +61,5 @@ export async function Crawler(options: CrawlOptions): Promise<CommunityPost[]> {
     }
 }
 
+//types.ts export too
+export type { CommunityPost, CrawlOptions, ProcessingOptions };
