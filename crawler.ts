@@ -10,6 +10,7 @@ const supportedEncodings = [
 ];
 export async function crawlCommunityPosts(options: CrawlOptions): Promise<CommunityPost[]> {
     const { postListUrl, pageQueryParam, selectors, referenceTime, options: matchers } = options;
+    const startTime = options.startTime ? options.startTime.toISOString() : new Date();
     const posts: CommunityPost[] = [];
 
     try {
@@ -90,7 +91,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     }
 
                     const postTime = parseDateString(postInfo.timestamp, matchers.timestamp);
-                    if (postTime <= referenceTime || postInfo.timestamp === "") {
+                    if (postTime <= referenceTime || postInfo.timestamp === "" || postTime >= startTime) {
                         stopCrawling = true;
                         break;
                     }

@@ -36,4 +36,5 @@ export interface CrawlOptions {
     };
     options: ProcessingOptions;
     referenceTime: Date;
+    startTime?: Date;
 }
