@@ -1,13 +1,12 @@
 {
   "name": "@paul9748/community_crawler",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "",
   "main": "dist/communityCrawler.js",
   "scripts": {
     "start": "ts-node communityCrawler.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "python3 -m pip install transformers==4.39.3"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "files": [
     "dist/**/*.js",

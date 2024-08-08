@@ -91,10 +91,11 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     }
 
                     const postTime = parseDateString(postInfo.timestamp, matchers.timestamp);
-                    if (postTime <= referenceTime || postInfo.timestamp === "" || postTime >= startTime) {
+                    if (postTime <= referenceTime || postInfo.timestamp === "") {
                         stopCrawling = true;
                         break;
                     }
+                    if (postTime >= startTime) break
 
                     posts.push({
                         ...postInfo,
