@@ -82,7 +82,7 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     }
                     let rowData = Buffer.from(postResponse.data);
                     let decodedData = iconv.decode(rowData, encoding);
-                    await delay(1000 + Math.random() * 2000);
+                    await delay(500 + Math.random() * 1000);
                     const postInfo = extractPostInfo(decodedData, selectors, matchers);
 
                     if (!postInfo.timestamp) {
@@ -91,19 +91,26 @@ export async function crawlCommunityPosts(options: CrawlOptions): Promise<Commun
                     }
 
                     const postTime = parseDateString(postInfo.timestamp, matchers.timestamp);
+                    console.log(postTime);
                     if (postTime <= referenceTime || postInfo.timestamp === "") {
                         stopCrawling = true;
                         break;
                     }
                     if (postTime >= startTime) break
 
-                    posts.push({
-                        ...postInfo,
-                        link: postPageUrl,
-                        timestamp: postTime.toString(),
-                        data: [""],
-                        data2: JSON
-                    });
+                    if (!posts.find(post => post.link === postPageUrl)) {
+                        posts.push({
+                            ...postInfo,
+                            link: postPageUrl,
+                            timestamp: postTime.toString(),
+                            data: [""],
+                            data2: JSON
+                        });
+                    } else {
+                        console.log("중복된 게시물이 있습니다. 추가하지 않습니다.");
+                    }
+
+
                 } catch (error) {
                     console.error('Error occurred while crawling post:', error);
                 }
@@ -167,7 +174,8 @@ function findHtmlContent($: any, selector: string, matcher?: RegExp): string {
 function parseDateString(dateString: string, matcher: RegExp): Date {
     const match = dateString.match(matcher);
     if (match) {
-        const [_, year, month, day, hour, minute, second] = match;
+        let [_, year, month, day, hour, minute, second] = match;
+        if (second == undefined) second = "00";
         return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
     } else {
         console.error('Invalid date string:', dateString);
